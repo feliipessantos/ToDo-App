@@ -28,7 +28,7 @@ const Book = ({ navigation }) => {
     console.log(`Description ${description}`);
 
     if (isValid()) {
-      console.log('Valid!');
+      console.log('OK!');
 
       const id = 1;
       const data = {
