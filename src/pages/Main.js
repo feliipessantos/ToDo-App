@@ -1,53 +1,79 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 
 import Icon from "react-native-vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Main = ({navigation}) => {
-  const data = [
-    {
-      id: "1",
-      title: "Clean the house",
-      anotations: "Remove the dust",
-      read: false,
-      photo: null,
-    },
-    {
-      id: "2",
-      title: "Study ",
-      anotations: "React Native",
-      read: false,
-      photo: null,
-    },
-    {
-      id: "3",
-      title: "Go to the Gym",
-      anotations: "Don't think, just go!!",
-      read: false,
-      photo: null,
-    }
-  ]
+  const [books, setBooks] = useState([]);
+  
+  useEffect(() => {
+    AsyncStorage.getItem("books").then(data => {
+      const book = JSON.parse(data);
+      setBooks(book);
+    })
+  }, []);
+
+  const onNewBook = () => {
+    navigation.navigate('Book');
+  }
+
+  const onBookEdit = (bookId) => {
+    const book = books.find(item => item.id === bookId)
+    navigation.navigate('Book', {book: book, isEdit: true});
+  };
+
+  const onBookDelete = async (bookId) => {
+    const newBooks = books.filter(item => item.id !== bookId);
+    await AsyncStorage.setItem("books", JSON.stringify(newBooks));
+    setBooks(newBooks);
+  }
+
+  const onBookRead = async (bookId) => {
+    const newBooks = books.map(item => {
+      if (item.id === bookId) {
+        item.read = !item.read; // false -> true / true -> false
+      }
+      return item;
+    });
+
+    await AsyncStorage.setItem("books", JSON.stringify(newBooks));
+    setBooks(newBooks); 
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.toolbox}>
-        <Text style={styles.title}>To Do List</Text>
+        <Text style={styles.title}>Lista de Leitura</Text>
         <TouchableOpacity
           style={styles.toolboxButton}
-          onPress={() => {
-            navigation.navigate("Book");
-          }}
-          >
+          onPress={onNewBook}>
           <Icon name="add" size={14} color="#fff" />
         </TouchableOpacity>
       </View>
       <FlatList 
-        data={data} 
+        data={books} 
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.itemButton}>
-            <Text style={styles.itemText}>{item.title}</Text>
-          </TouchableOpacity>
+          <View style={styles.itemsContainer}>
+            <TouchableOpacity 
+              style={styles.itemButton}
+              onPress={() => onBookRead(item.id)}>
+              <Text style={[styles.itemText, item.read ? styles.itemRead : '']}>{item.title}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.editButton} 
+              onPress={() => onBookEdit(item.id)}>
+              <Icon name="create" size={14} color="#2ecc71" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.deleteButton} 
+              onPress={() => onBookDelete(item.id)}>
+              <Icon name="delete" size={14} color="#e74c3c" />
+            </TouchableOpacity>
+          </View>
         )} 
       />
     </View>
@@ -57,8 +83,7 @@ const Main = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 5,
-    marginTop: 50,
+    padding: 35,
   },
   toolbox: {
     flexDirection: "row",
@@ -77,12 +102,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  itemsContainer: {
+    flexDirection: "row",
+  },
   itemButton: {
-
+    flex: 1,
   },
   itemText: {
     fontSize: 16,
   },
+  itemRead: {
+    textDecorationLine: "line-through",
+    color: "#95a5a6",
+  },
+  editButton: {},
+  deleteButton: {},
 });
 
 export default Main;
